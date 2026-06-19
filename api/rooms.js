@@ -27,7 +27,7 @@ export default async function handler(req, res) {
     }
 
     const graphRes = await fetch(
-      `https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${listId}/items?$expand=fields($select=Title,Sala,HoraInicio,HoraFin,Organizador)`,
+      `https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${listId}/items?$expand=fields`,
       { headers: { Authorization: `Bearer ${tokenJson.access_token}` } }
     );
 
@@ -48,17 +48,13 @@ export default async function handler(req, res) {
         id: item.id,
         title: f.Title || '',
         organizer: f.Organizador || '',
-        start: f.HoraInicio || '',
-        end: f.HoraFin || '',
+        start: f.HoraInicio || f.StartDate || f.EventDate || '',
+        end: f.HoraFin || f.EndDate || '',
         raw: f
       });
     }
 
-    const rooms = Object.keys(map).sort().map(name => ({
-      name,
-      events: map[name]
-    }));
-
+    const rooms = Object.keys(map).sort().map(name => ({ name, events: map[name] }));
     return res.status(200).json({ rooms });
   } catch (e) {
     return res.status(500).json({ error: e.message });
