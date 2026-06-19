@@ -65,8 +65,23 @@ function todayKey() {
     String(d.getDate()).padStart(2, '0');
 }
 
-function getEventDateRaw(ev) {
-  return ev.start || ev.end || ev.time || ev.startDateTime || ev.date || ev.startTime || '';
+function getStart(ev) {
+  return ev.start || ev.startDateTime || ev.date || ev.time || '';
+}
+
+function getEnd(ev) {
+  return ev.end || ev.endTime || '';
+}
+
+function getStatus(ev) {
+  const now = new Date();
+  const start = parseAnyDate(getStart(ev));
+  const end = parseAnyDate(getEnd(ev));
+
+  if (!start) return { status: 'proximo', label: 'Próximo' };
+  if (end && now >= start && now <= end) return { status: 'en-curso', label: 'En curso' };
+  if (now < start) return { status: 'proximo', label: 'Próximo' };
+  return { status: 'finalizado', label: 'Finalizado' };
 }
 
 async function loadRooms() {
@@ -86,10 +101,12 @@ async function loadRooms() {
     grid.innerHTML = rooms.map(room => {
       const allEvents = Array.isArray(room.events) ? room.events : [];
 
-      const todayEvents = allEvents.filter(ev => {
-        const raw = getEventDateRaw(ev);
-        return raw && localDateKey(raw) === today;
-      });
+      const todayEvents = allEvents
+        .filter(ev => {
+          const raw = getStart(ev);
+          return raw && localDateKey(raw) === today;
+        })
+        .sort((a, b) => parseAnyDate(getStart(a)) - parseAnyDate(getStart(b)));
 
       const count = todayEvents.length;
 
@@ -99,18 +116,17 @@ async function loadRooms() {
 
       const body = count
         ? todayEvents.map(ev => {
-            const status = ev.status || 'proximo';
-            const statusLabel = ev.statusLabel || 'Próximo';
-            const timeValue = getEventDateRaw(ev);
+            const st = getStatus(ev);
+            const startValue = getStart(ev);
 
             return `
               <div class="event">
-                <div class="time">${esc(formatTime(timeValue))}</div>
+                <div class="time">${esc(formatTime(startValue))}</div>
                 <div class="event-main">
                   <div class="event-title">${esc(ev.title || ev.subject || 'Sin título')}</div>
                   ${ev.organizer ? `<div class="event-meta">${esc(ev.organizer)}</div>` : ''}
                 </div>
-                <div class="status ${esc(status)}">${esc(statusLabel)}</div>
+                <div class="status ${esc(st.status)}">${esc(st.label)}</div>
               </div>
             `;
           }).join('')
