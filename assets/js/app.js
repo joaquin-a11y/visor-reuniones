@@ -66,11 +66,11 @@ function todayKey() {
 }
 
 function getStart(ev) {
-  return ev.start || ev.startDateTime || ev.date || ev.time || '';
+  return ev.start || ev.startDateTime || ev.date || ev.time || ev.HoraInicio || '';
 }
 
 function getEnd(ev) {
-  return ev.end || ev.endTime || '';
+  return ev.end || ev.endTime || ev.HoraFin || '';
 }
 
 function getStatus(ev) {
@@ -80,8 +80,8 @@ function getStatus(ev) {
 
   if (!start) return { status: 'proximo', label: 'Próximo' };
   if (end && now >= start && now <= end) return { status: 'en-curso', label: 'En curso' };
-  if (now < start) return { status: 'proximo', label: 'Próximo' };
-  return { status: 'finalizado', label: 'Finalizado' };
+  if (now >= start && (!end || now > end)) return { status: 'finalizado', label: 'Finalizado' };
+  return { status: 'proximo', label: 'Próximo' };
 }
 
 async function loadRooms() {
@@ -106,7 +106,11 @@ async function loadRooms() {
           const raw = getStart(ev);
           return raw && localDateKey(raw) === today;
         })
-        .sort((a, b) => parseAnyDate(getStart(a)) - parseAnyDate(getStart(b)));
+        .sort((a, b) => {
+          const da = parseAnyDate(getStart(a));
+          const db = parseAnyDate(getStart(b));
+          return (da?.getTime() || 0) - (db?.getTime() || 0);
+        });
 
       const count = todayEvents.length;
 
