@@ -27,18 +27,26 @@ export default async function handler(req, res) {
     const graphRes = await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${listId}/items?expand=fields`, {
       headers: { Authorization: `Bearer ${tokenJson.access_token}` }
     });
+
     const graphJson = await graphRes.json();
     if (!graphRes.ok) return res.status(500).json({ error: 'Error en Graph', details: graphJson });
 
     const items = graphJson.value || [];
     const map = {};
+
     for (const item of items) {
       const f = item.fields || {};
       const room = f.Sala || 'Sin sala';
+
       if (!map[room]) map[room] = [];
+
+      const rawStart = f.Hora_x0020_Inicio || f['Hora Inicio'] || f.HoraInicio || '';
+      const rawEnd = f.Hora_x0020_Fin || f['Hora Fin'] || f.HoraFin || '';
+
       map[room].push({
-        time: f.HoraInicio ? String(f.HoraInicio).slice(11,16) : '',
-        title: f.Title || '',
+        time: rawStart ? String(rawStart).slice(11, 16) : '',
+        end: rawEnd ? String(rawEnd).slice(11, 16) : '',
+        title: f.Title || f.Título || '',
         organizer: f.Organizador || '',
         status: 'proximo',
         statusLabel: 'Próximo'
