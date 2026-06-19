@@ -22,14 +22,19 @@ export default async function handler(req, res) {
     });
 
     const tokenJson = await tokenRes.json();
-    if (!tokenRes.ok) return res.status(500).json({ error: 'No se pudo obtener token', details: tokenJson });
+    if (!tokenRes.ok) {
+      return res.status(500).json({ error: 'No se pudo obtener token', details: tokenJson });
+    }
 
-    const graphRes = await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${listId}/items?expand=fields`, {
-      headers: { Authorization: `Bearer ${tokenJson.access_token}` }
-    });
+    const graphRes = await fetch(
+      `https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${listId}/items?$expand=fields($select=Title,Sala,HoraInicio,HoraFin,Organizador)`,
+      { headers: { Authorization: `Bearer ${tokenJson.access_token}` } }
+    );
 
     const graphJson = await graphRes.json();
-    if (!graphRes.ok) return res.status(500).json({ error: 'Error en Graph', details: graphJson });
+    if (!graphRes.ok) {
+      return res.status(500).json({ error: 'Error en Graph', details: graphJson });
+    }
 
     const items = graphJson.value || [];
     const map = {};
@@ -37,17 +42,13 @@ export default async function handler(req, res) {
     for (const item of items) {
       const f = item.fields || {};
       const room = f.Sala || 'Sin sala';
-
       if (!map[room]) map[room] = [];
 
-      const rawStart = f.Hora_x0020_Inicio || f['Hora Inicio'] || f.HoraInicio || '';
-      const rawEnd = f.Hora_x0020_Fin || f['Hora Fin'] || f.HoraFin || '';
-
       map[room].push({
-        time: rawStart ? String(rawStart).slice(11, 16) : '',
-        end: rawEnd ? String(rawEnd).slice(11, 16) : '',
-        title: f.Title || f.Título || '',
+        title: f.Title || '',
         organizer: f.Organizador || '',
+        time: f.HoraInicio ? String(f.HoraInicio).slice(11, 16) : '',
+        end: f.HoraFin ? String(f.HoraFin).slice(11, 16) : '',
         status: 'proximo',
         statusLabel: 'Próximo'
       });
