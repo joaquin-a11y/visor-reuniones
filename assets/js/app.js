@@ -110,5 +110,3 @@ async function loadRooms() {
 
 loadRooms();
 setInterval(loadRooms, 60000);
-loadRooms();
-setInterval(loadRooms, 60000);
