@@ -21,23 +21,34 @@ function esc(s) {
 function parseAnyDate(value) {
   if (!value) return null;
 
+  if (value instanceof Date && !Number.isNaN(value.getTime())) return value;
+
   const direct = new Date(value);
-  if (!Number.isNaN(direct.getTime())) return direct;
+  if (!Number.isNaN(direct.getTime()) && String(value).includes('T')) return direct;
 
-  const m = String(value).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
-  if (!m) return null;
+  const s = String(value).trim();
 
-  let month = parseInt(m[1], 10) - 1;
-  let day = parseInt(m[2], 10);
-  let year = parseInt(m[3], 10);
-  let hour = parseInt(m[4], 10);
-  const minute = parseInt(m[5], 10);
-  const ap = m[6].toUpperCase();
+  let m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (m) {
+    let month = parseInt(m[1], 10) - 1;
+    let day = parseInt(m[2], 10);
+    let year = parseInt(m[3], 10);
+    let hour = parseInt(m[4], 10);
+    const minute = parseInt(m[5], 10);
+    const ap = m[6].toUpperCase();
 
-  if (ap === 'PM' && hour !== 12) hour += 12;
-  if (ap === 'AM' && hour === 12) hour = 0;
+    if (ap === 'PM' && hour !== 12) hour += 12;
+    if (ap === 'AM' && hour === 12) hour = 0;
 
-  return new Date(year, month, day, hour, minute);
+    return new Date(year, month, day, hour, minute);
+  }
+
+  m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (m) {
+    return new Date(parseInt(m[3], 10), parseInt(m[1], 10) - 1, parseInt(m[2], 10));
+  }
+
+  return null;
 }
 
 function formatTime(value) {
@@ -53,24 +64,20 @@ function formatTime(value) {
 function localDateKey(value) {
   const d = parseAnyDate(value);
   if (!d) return '';
-  return d.getFullYear() + '-' +
-    String(d.getMonth() + 1).padStart(2, '0') + '-' +
-    String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 function todayKey() {
   const d = new Date();
-  return d.getFullYear() + '-' +
-    String(d.getMonth() + 1).padStart(2, '0') + '-' +
-    String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 function getStart(ev) {
-  return ev.start || ev.startDateTime || ev.date || ev.time || ev.HoraInicio || '';
+  return ev.start || ev.startDateTime || ev.date || ev.time || ev.HoraInicio || ev.horaInicio || ev.fechaInicio || '';
 }
 
 function getEnd(ev) {
-  return ev.end || ev.endTime || ev.HoraFin || '';
+  return ev.end || ev.endTime || ev.HoraFin || ev.horaFin || ev.fechaFin || '';
 }
 
 function getStatus(ev) {
