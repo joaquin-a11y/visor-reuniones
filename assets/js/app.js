@@ -25,10 +25,16 @@ function formatTime(value) {
   return d.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', hour12: false });
 }
 
-function isSameDay(date1, date2) {
-  return date1.getFullYear() === date2.getFullYear() &&
-         date1.getMonth() === date2.getMonth() &&
-         date1.getDate() === date2.getDate();
+function isSameDay(a, b) {
+  return a.getFullYear() === b.getFullYear() &&
+         a.getMonth() === b.getMonth() &&
+         a.getDate() === b.getDate();
+}
+
+function getEventDate(ev) {
+  const raw = ev.time || ev.start || ev.startDateTime || ev.date || ev.startTime;
+  const d = new Date(raw);
+  return Number.isNaN(d.getTime()) ? null : d;
 }
 
 async function loadRooms() {
@@ -40,35 +46,29 @@ async function loadRooms() {
     const rooms = Array.isArray(data.rooms) ? data.rooms : [];
     const today = new Date();
 
-    const filteredRooms = rooms
-      .map(room => {
-        const events = Array.isArray(room.events) ? room.events : [];
-        const todayEvents = events.filter(ev => {
-          const d = new Date(ev.time || ev.start || ev.startDateTime || ev.date);
-          return !Number.isNaN(d.getTime()) && isSameDay(d, today);
-        });
-        return { ...room, events: todayEvents };
-      })
-      .filter(room => room.events.length > 0);
-
-    if (!filteredRooms.length) {
-      grid.innerHTML = `<section class="card"><div class="empty">No hay reuniones hoy</div></section>`;
+    if (!rooms.length) {
+      grid.innerHTML = `<section class="card"><div class="empty">No hay datos</div></section>`;
       return;
     }
 
-    grid.innerHTML = filteredRooms.map(room => {
-      const events = room.events;
-      const count = events.length;
+    grid.innerHTML = rooms.map(room => {
+      const allEvents = Array.isArray(room.events) ? room.events : [];
+      const todayEvents = allEvents.filter(ev => {
+        const d = getEventDate(ev);
+        return d && isSameDay(d, today);
+      });
+
+      const count = todayEvents.length;
 
       const headerBadge = count
         ? `<span class="room-badge count">${count} Evento${count === 1 ? '' : 's'}</span>`
         : `<span class="room-badge available">Disponible</span>`;
 
       const body = count
-        ? events.map(ev => {
+        ? todayEvents.map(ev => {
             const status = ev.status || 'proximo';
             const statusLabel = ev.statusLabel || 'Próximo';
-            const timeValue = ev.time || ev.start || ev.startDateTime || ev.date;
+            const timeValue = ev.time || ev.start || ev.startDateTime || ev.date || ev.startTime;
 
             return `
               <div class="event">
