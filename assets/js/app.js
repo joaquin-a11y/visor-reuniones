@@ -93,10 +93,16 @@ function getStatus(ev) {
 
 async function loadRooms() {
   const grid = document.getElementById('grid');
+  const debug = document.getElementById('debug');
 
   try {
     const res = await fetch('/api/rooms');
     const data = await res.json();
+
+    if (debug) {
+      debug.textContent = JSON.stringify(data, null, 2);
+    }
+
     const rooms = Array.isArray(data.rooms) ? data.rooms : [];
     const today = todayKey();
 
@@ -107,6 +113,8 @@ async function loadRooms() {
 
     grid.innerHTML = rooms.map(room => {
       const allEvents = Array.isArray(room.events) ? room.events : [];
+
+      console.log('SALA:', room.name, allEvents);
 
       const todayEvents = allEvents
         .filter(ev => {
@@ -156,6 +164,7 @@ async function loadRooms() {
       `;
     }).join('');
   } catch (err) {
+    console.error(err);
     grid.innerHTML = `<section class="card"><div class="empty">Error al cargar datos</div></section>`;
   }
 }
