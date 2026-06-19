@@ -18,16 +18,41 @@ function esc(s) {
     .replaceAll('"', '&quot;');
 }
 
+function parseAnyDate(value) {
+  if (!value) return null;
+
+  const direct = new Date(value);
+  if (!Number.isNaN(direct.getTime())) return direct;
+
+  const m = String(value).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (!m) return null;
+
+  let month = parseInt(m[1], 10) - 1;
+  let day = parseInt(m[2], 10);
+  let year = parseInt(m[3], 10);
+  let hour = parseInt(m[4], 10);
+  const minute = parseInt(m[5], 10);
+  const ap = m[6].toUpperCase();
+
+  if (ap === 'PM' && hour !== 12) hour += 12;
+  if (ap === 'AM' && hour === 12) hour = 0;
+
+  return new Date(year, month, day, hour, minute);
+}
+
 function formatTime(value) {
-  if (!value) return '';
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return String(value).slice(11, 16) || '';
-  return d.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', hour12: false });
+  const d = parseAnyDate(value);
+  if (!d) return '';
+  return d.toLocaleTimeString('es-CL', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  });
 }
 
 function localDateKey(value) {
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return '';
+  const d = parseAnyDate(value);
+  if (!d) return '';
   return d.getFullYear() + '-' +
     String(d.getMonth() + 1).padStart(2, '0') + '-' +
     String(d.getDate()).padStart(2, '0');
@@ -41,7 +66,7 @@ function todayKey() {
 }
 
 function getEventDateRaw(ev) {
-  return ev.time || ev.start || ev.startDateTime || ev.date || ev.startTime || ev.endTime || '';
+  return ev.start || ev.end || ev.time || ev.startDateTime || ev.date || ev.startTime || '';
 }
 
 async function loadRooms() {
