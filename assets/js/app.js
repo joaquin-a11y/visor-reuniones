@@ -61,15 +61,15 @@ function formatTime(value) {
   });
 }
 
-function localDateKey(value) {
+function utcDateKey(value) {
   const d = parseAnyDate(value);
   if (!d) return '';
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
 }
 
-function todayKey() {
+function todayUtcKey() {
   const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
 }
 
 function getStart(ev) {
@@ -102,7 +102,7 @@ async function loadRooms() {
     if (debug) debug.textContent = JSON.stringify(data, null, 2);
 
     const rooms = Array.isArray(data.rooms) ? data.rooms : [];
-    const today = todayKey();
+    const today = todayUtcKey();
 
     if (!rooms.length) {
       grid.innerHTML = `<section class="card loading">No hay datos</section>`;
@@ -115,7 +115,7 @@ async function loadRooms() {
       const todayEvents = allEvents
         .filter(ev => {
           const raw = getStart(ev);
-          return raw && localDateKey(raw) === today;
+          return raw && utcDateKey(raw) === today;
         })
         .sort((a, b) => {
           const da = parseAnyDate(getStart(a));
