@@ -23,10 +23,10 @@ function parseAnyDate(value) {
 
   if (value instanceof Date && !Number.isNaN(value.getTime())) return value;
 
-  const direct = new Date(value);
-  if (!Number.isNaN(direct.getTime()) && String(value).includes('T')) return direct;
-
   const s = String(value).trim();
+
+  const direct = new Date(s);
+  if (!Number.isNaN(direct.getTime())) return direct;
 
   let m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
   if (m) {
@@ -99,22 +99,18 @@ async function loadRooms() {
     const res = await fetch('/api/rooms');
     const data = await res.json();
 
-    if (debug) {
-      debug.textContent = JSON.stringify(data, null, 2);
-    }
+    if (debug) debug.textContent = JSON.stringify(data, null, 2);
 
     const rooms = Array.isArray(data.rooms) ? data.rooms : [];
     const today = todayKey();
 
     if (!rooms.length) {
-      grid.innerHTML = `<section class="card"><div class="empty">No hay datos</div></section>`;
+      grid.innerHTML = `<section class="card loading">No hay datos</section>`;
       return;
     }
 
     grid.innerHTML = rooms.map(room => {
       const allEvents = Array.isArray(room.events) ? room.events : [];
-
-      console.log('SALA:', room.name, allEvents);
 
       const todayEvents = allEvents
         .filter(ev => {
@@ -165,7 +161,7 @@ async function loadRooms() {
     }).join('');
   } catch (err) {
     console.error(err);
-    grid.innerHTML = `<section class="card"><div class="empty">Error al cargar datos</div></section>`;
+    grid.innerHTML = `<section class="card loading">Error al cargar datos</section>`;
   }
 }
 
