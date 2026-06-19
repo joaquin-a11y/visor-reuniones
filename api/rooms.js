@@ -45,13 +45,13 @@ export default async function handler(req, res) {
       if (!map[room]) map[room] = [];
 
       map[room].push({
-        title: f.Title || '',
-        organizer: f.Organizador || '',
-        time: f.HoraInicio ? String(f.HoraInicio).slice(11, 16) : '',
-        end: f.HoraFin ? String(f.HoraFin).slice(11, 16) : '',
-        status: 'proximo',
-        statusLabel: 'Próximo'
-      });
+  title: f.Title || '',
+  organizer: f.Organizador || '',
+  start: f.HoraInicio || '',
+  end: f.HoraFin || '',
+  status: 'proximo',
+  statusLabel: 'Próximo'
+});
     }
 
     const rooms = Object.keys(map).sort().map(name => ({ name, events: map[name] }));
