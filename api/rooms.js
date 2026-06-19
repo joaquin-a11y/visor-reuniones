@@ -45,14 +45,20 @@ export default async function handler(req, res) {
       if (!map[room]) map[room] = [];
 
       map[room].push({
+        id: item.id,
         title: f.Title || '',
         organizer: f.Organizador || '',
         start: f.HoraInicio || '',
-        end: f.HoraFin || ''
+        end: f.HoraFin || '',
+        raw: f
       });
     }
 
-    const rooms = Object.keys(map).sort().map(name => ({ name, events: map[name] }));
+    const rooms = Object.keys(map).sort().map(name => ({
+      name,
+      events: map[name]
+    }));
+
     return res.status(200).json({ rooms });
   } catch (e) {
     return res.status(500).json({ error: e.message });
