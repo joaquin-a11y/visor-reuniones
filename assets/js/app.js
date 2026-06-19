@@ -25,16 +25,23 @@ function formatTime(value) {
   return d.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', hour12: false });
 }
 
-function isSameDay(a, b) {
-  return a.getFullYear() === b.getFullYear() &&
-         a.getMonth() === b.getMonth() &&
-         a.getDate() === b.getDate();
+function localDateKey(value) {
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.getFullYear() + '-' +
+    String(d.getMonth() + 1).padStart(2, '0') + '-' +
+    String(d.getDate()).padStart(2, '0');
 }
 
-function getEventDate(ev) {
-  const raw = ev.time || ev.start || ev.startDateTime || ev.date || ev.startTime;
-  const d = new Date(raw);
-  return Number.isNaN(d.getTime()) ? null : d;
+function todayKey() {
+  const d = new Date();
+  return d.getFullYear() + '-' +
+    String(d.getMonth() + 1).padStart(2, '0') + '-' +
+    String(d.getDate()).padStart(2, '0');
+}
+
+function getEventDateRaw(ev) {
+  return ev.time || ev.start || ev.startDateTime || ev.date || ev.startTime || ev.endTime || '';
 }
 
 async function loadRooms() {
@@ -44,7 +51,7 @@ async function loadRooms() {
     const res = await fetch('/api/rooms');
     const data = await res.json();
     const rooms = Array.isArray(data.rooms) ? data.rooms : [];
-    const today = new Date();
+    const today = todayKey();
 
     if (!rooms.length) {
       grid.innerHTML = `<section class="card"><div class="empty">No hay datos</div></section>`;
@@ -53,9 +60,10 @@ async function loadRooms() {
 
     grid.innerHTML = rooms.map(room => {
       const allEvents = Array.isArray(room.events) ? room.events : [];
+
       const todayEvents = allEvents.filter(ev => {
-        const d = getEventDate(ev);
-        return d && isSameDay(d, today);
+        const raw = getEventDateRaw(ev);
+        return raw && localDateKey(raw) === today;
       });
 
       const count = todayEvents.length;
@@ -68,7 +76,7 @@ async function loadRooms() {
         ? todayEvents.map(ev => {
             const status = ev.status || 'proximo';
             const statusLabel = ev.statusLabel || 'Próximo';
-            const timeValue = ev.time || ev.start || ev.startDateTime || ev.date || ev.startTime;
+            const timeValue = getEventDateRaw(ev);
 
             return `
               <div class="event">
@@ -100,5 +108,7 @@ async function loadRooms() {
   }
 }
 
+loadRooms();
+setInterval(loadRooms, 60000);
 loadRooms();
 setInterval(loadRooms, 60000);
