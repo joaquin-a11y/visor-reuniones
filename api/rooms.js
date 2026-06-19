@@ -37,25 +37,26 @@ export default async function handler(req, res) {
     }
 
     const items = graphJson.value || [];
-    const map = {};
-
-    for (const item of items) {
-      const f = item.fields || {};
-      const room = f.Sala || 'Sin sala';
-      if (!map[room]) map[room] = [];
-
-      map[room].push({
-        id: item.id,
-        title: f.Title || '',
-        organizer: f.Organizador || '',
-        start: f.HoraInicio || f.StartDate || f.EventDate || '',
-        end: f.HoraFin || f.EndDate || '',
-        raw: f
+    const debug = items
+      .filter(item => {
+        const f = item.fields || {};
+        return String(f.Title || '').toLowerCase().includes('punto de control');
+      })
+      .map(item => {
+        const f = item.fields || {};
+        return {
+          id: item.id,
+          title: f.Title || '',
+          sala: f.Sala || '',
+          horaInicio: f.HoraInicio || '',
+          horaFin: f.HoraFin || '',
+          created: f.Created || item.createdDateTime || '',
+          modified: f.Modified || item.lastModifiedDateTime || '',
+          raw: f
+        };
       });
-    }
 
-    const rooms = Object.keys(map).sort().map(name => ({ name, events: map[name] }));
-    return res.status(200).json({ rooms });
+    return res.status(200).json({ debug });
   } catch (e) {
     return res.status(500).json({ error: e.message });
   }
